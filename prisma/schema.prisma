@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model community_forum {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String          @db.VarChar
+  content       String
+  created_by    String          @db.Uuid
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  user          user            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  forum_comment forum_comment[]
+}
+
+model excavator {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String    @db.VarChar
+  owner_id String    @db.Uuid
+  user     user      @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project  project[]
+}
+
+model forum_comment {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  community_forum_id String          @db.Uuid
+  content            String
+  created_by         String          @db.Uuid
+  created_at         DateTime        @default(now()) @db.Timestamp(6)
+  community_forum    community_forum @relation(fields: [community_forum_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user               user            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model knowledge_base {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String   @db.VarChar
+  content    String
+  created_by String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  user       user     @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notification {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String   @db.Uuid
+  message     String   @db.VarChar
+  read_status Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  user        user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model project {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  excavator_id   String           @db.Uuid
+  contributor_id String           @db.Uuid
+  location       String           @db.VarChar
+  soil_type      String           @db.VarChar
+  start_date     DateTime         @db.Date
+  end_date       DateTime?        @db.Date
+  user           user             @relation(fields: [contributor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  excavator      excavator        @relation(fields: [excavator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  soil_condition soil_condition[]
+}
+
+model soil_condition {
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  project_id       String  @db.Uuid
+  soil_type        String  @db.VarChar
+  depth            Int
+  moisture_content Int
+  bearing_capacity Int
+  project          project @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model subscription {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String   @db.Uuid
+  subscription_type String   @db.VarChar
+  start_date        DateTime @db.Date
+  end_date          DateTime @db.Date
+  user              user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role            String            @db.VarChar
+  name            String            @db.VarChar
+  email           String            @unique @db.VarChar
+  password        String            @db.VarChar
+  roq_user_id     String?           @db.VarChar(255)
+  tenant_id       String?           @db.VarChar(255)
+  community_forum community_forum[]
+  excavator       excavator[]
+  forum_comment   forum_comment[]
+  knowledge_base  knowledge_base[]
+  notification    notification[]
+  project         project[]
+  subscription    subscription[]
+}
